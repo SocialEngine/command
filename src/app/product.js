@@ -5,7 +5,7 @@ const str = require('./str');
 const obj = require('./obj');
 
 exports.save = function (ordered) {
-    const productDir = path.join(process.cwd(), '/.se', ordered.id.replace('@', ''));
+    const productDir = path.join(process.cwd(), '/.se', ordered.id.split('/')[1]);
     if (!fs.existsSync(productDir)) {
         fs.mkdirSync(productDir, {
             recursive: true

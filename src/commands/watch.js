@@ -1,21 +1,21 @@
 
-const app = require('../app');
 const commander = require('commander');
 const io = require('socket.io-client');
 const chokidar = require('chokidar');
 const path = require('path');
 const watcher = require('../app/watcher');
 const product = require('../app/product');
+const config = require('../app/config');
+const {error} = require('../app/output');
 
 const srcDir = path.join(process.cwd(), '/src');
 
 commander.command('watch').action(async () => {
-    if (!app.config.exits()) {
-        app.error('Config file is missing. Run "node socialengine init" first.');
+    if (!config.exits()) {
+        error('Config file is missing. Run "node socialengine init" first.');
     }
 
-    const config = app.config.get();
-    const client = io.connect(config.url);
+    const client = io.connect(config.get('url'));
     let connections = 0;
 
     client.on('connect', function () {
@@ -38,7 +38,7 @@ commander.command('watch').action(async () => {
         connections++;
     });
 
-    client.on('devops:' + config.hash, function (params) {
+    client.on('devops:' + config.get('hash'), function (params) {
         product.save(params.data);
     });
 });

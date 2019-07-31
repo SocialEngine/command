@@ -1,4 +1,7 @@
-const app = require('../app');
+const config = require('../app/config');
+const {error, handleCatch} = require('../app/output');
+const str = require('../app/str');
+const product = require('../app/product');
 const commander = require('commander');
 const readline = require('readline-sync');
 const path = require('path');
@@ -9,7 +12,7 @@ const cwd = process.cwd();
 const Spinner = require('cli-spinner').Spinner;
 
 async function syncProducts () {
-    const currentConfig = app.config.get();
+    const currentConfig = config.get();
 
     const request = await fetch(currentConfig.url + '/api/site/products?forExport=true', {
         headers: {
@@ -18,13 +21,13 @@ async function syncProducts () {
             'se-viewer-token': currentConfig.apiToken
         }
     });
-    const products = await request.json().catch(app.handleCatch);
+    const products = await request.json().catch(handleCatch);
     if (!products) {
-        app.error('Unable to connect to the API with your credentials.')
+        error('Unable to connect to the API with your credentials.')
     }
 
-    for (const product of products) {
-        app.product.save(product);
+    for (const data of products) {
+        product.save(data);
     }
     console.log('Ready!');
 }
@@ -38,11 +41,11 @@ commander.command('init').action(async () => {
         }
     }
 
-    if (!app.config.exits()) {
+    if (!config.exits()) {
         let uniteUrl = readline.question('SocialEngine Unite URL: ');
 
         if (!uniteUrl) {
-            app.error('Provide a Unite URL.');
+            error('Provide a Unite URL.');
         }
 
         if (uniteUrl.slice(-1) === '/') {
@@ -55,15 +58,15 @@ commander.command('init').action(async () => {
         const response = await fetch(uniteUrl + '/manifest.json');
         const manifest = await response.json().catch(() => false);
         if (!manifest) {
-            app.error('Does not look like its a Unite site.');
+            error('Does not look like its a Unite site.');
         }
 
         const siteId = response.headers.get('se-id');
         if (!siteId) {
-            app.error('Cannot identify the sites ID.');
+            error('Cannot identify the sites ID.');
         }
 
-        const connectToken = app.str.random(64);
+        const connectToken = str.random(64);
         const link = uniteUrl + '/acp/devops?connect=' + connectToken;
 
         console.log('Click/Follow link to connect to DevOps:');
@@ -87,7 +90,7 @@ commander.command('init').action(async () => {
                     hash: tokens.hash,
                     siteId: siteId
                 };
-                app.config.save(config);
+                config.save(config);
                 spinner.stop();
                 await syncProducts();
                 process.exit(0);

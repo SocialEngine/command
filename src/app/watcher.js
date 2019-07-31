@@ -1,41 +1,52 @@
 const config = require('./config');
-const output = require('./output');
 const path = require('path');
 const fs = require('fs');
-
-const findUp = function findCacheFolder (folder, lookingFor) {
-    const currentDir = path.dirname(folder);
-    const last = currentDir.split('/').pop();
-    if (!last) {
-        return false;
-    }
-    const checkDir = path.join(currentDir, lookingFor);
-    if (fs.existsSync(checkDir)) {
-        return checkDir;
-    }
-    return findCacheFolder(path.join(currentDir, '../'), lookingFor);
-};
+const parse = require('../app/parse');
 
 module.exports = function (socket, event) {
-    return function (file) {
+    return async function (file) {
         const ext = file.split('.').pop();
         if (!['js'].includes(ext)) {
             return;
         }
 
-        const dir = findUp(file, '/.se');
-        if (!dir) {
-            output.error('/.se cache directory not found.');
-            return null;
+        const relativeFile = file.split('/src/')[1];
+        const productId = relativeFile.split('/')[0];
+        const manifestDir = path.join(process.cwd(), '/.se', productId);
+        if (!fs.existsSync(manifestDir)) {
+            return;
         }
-        const manifest = require(path.join(dir, '/manifest.json'));
-        const fileName = file.replace(path.join(dir, '../'), manifest.id + '/');
-        // const parts = path.split('/src/');
+        const manifest = require(path.join(manifestDir, '/manifest.json'));
+        const fileName = manifest.id + relativeFile.replace(productId, '');
+        console.log('[' + event + ']:', fileName);
 
+        const parsed = await parse.file(fileName, fs.readFileSync(file, 'utf-8'));
+        const js = parse.js(parsed.code, false, fileName);
+        let newPhrases = {};
+        const phrases = js.phrases;
+        for (let phrase of Object.keys(phrases)) {
+            const sub = phrase.substr(0, 2);
+            const hashPath = path.join(manifestDir, '/phrases', sub, phrase + '.txt');
+            if (!fs.existsSync(hashPath)) {
+                console.log('[new][phrase][' + phrase + ']:', phrases[phrase]);
+                newPhrases[phrase] = phrases[phrase];
+                const subDir = path.dirname(hashPath);
+                if (!fs.existsSync(subDir)) {
+                    fs.mkdirSync(subDir);
+                }
+                fs.writeFileSync(hashPath, phrases[phrase], 'utf-8');
+            }
+        }
+
+        const data = {
+            component: fileName,
+            code: js.code,
+            phrases: newPhrases
+        };
         socket.emit('devops', {
             file: {
                 event: event,
-                name: fileName
+                ...data
             },
             manifest: {
                 id: manifest.id
