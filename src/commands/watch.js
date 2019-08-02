@@ -12,7 +12,7 @@ const srcDir = path.join(process.cwd(), '/src');
 
 commander.command('watch').action(async () => {
     if (!config.exits()) {
-        error('Config file is missing. Run "node socialengine init" first.');
+        error('Config file is missing. Run "socialengine init" first.');
     }
 
     const client = io.connect(config.get('url'));
@@ -27,6 +27,7 @@ commander.command('watch').action(async () => {
         client.emit('heartbeat', 'ping');
 
         const watchFor = ['add', 'change', 'unlink'];
+        console.log('Watching:', srcDir);
         const watch = chokidar.watch(srcDir, {
             ignoreInitial: true
         });
@@ -39,6 +40,13 @@ commander.command('watch').action(async () => {
     });
 
     client.on('devops:' + config.get('hash'), function (params) {
-        product.save(params.data);
+        switch (params.action) {
+            case 'newFile':
+                product.newFile(params.data);
+                break;
+            default:
+                product.save(params.data);
+                break;
+        }
     });
 });

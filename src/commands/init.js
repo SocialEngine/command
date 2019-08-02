@@ -22,6 +22,9 @@ async function syncProducts () {
         }
     });
     const products = await request.json().catch(handleCatch);
+    if (!Array.isArray(products) && products.error !== undefined) {
+        error(products.error);
+    }
     if (!products) {
         error('Unable to connect to the API with your credentials.')
     }
@@ -83,14 +86,14 @@ commander.command('init').action(async () => {
             if (manifest.tokens !== null) {
                 clearInterval(check);
                 const tokens = manifest.tokens;
-                const config = {
+                const data = {
                     url: uniteUrl,
                     apiKey: tokens.apiKey.publicKey + ':' + tokens.apiKey.privateKey,
                     apiToken: tokens.apiToken.token,
                     hash: tokens.hash,
                     siteId: siteId
                 };
-                config.save(config);
+                config.save(data);
                 spinner.stop();
                 await syncProducts();
                 process.exit(0);

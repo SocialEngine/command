@@ -10,6 +10,10 @@ module.exports = function (socket, event) {
             return;
         }
 
+        if (event === 'unlink') {
+            return;
+        }
+
         const relativeFile = file.split('/src/')[1];
         const productId = relativeFile.split('/')[0];
         const manifestDir = path.join(process.cwd(), '/.se', productId);
@@ -20,7 +24,8 @@ module.exports = function (socket, event) {
         const fileName = manifest.id + relativeFile.replace(productId, '');
         console.log('[' + event + ']:', fileName);
 
-        const parsed = await parse.file(fileName, fs.readFileSync(file, 'utf-8'));
+        const originalFile = fs.readFileSync(file, 'utf-8');
+        const parsed = await parse.file(fileName, originalFile);
         const js = parse.js(parsed.code, false, fileName);
         let newPhrases = {};
         const phrases = js.phrases;
@@ -40,7 +45,8 @@ module.exports = function (socket, event) {
 
         const data = {
             component: fileName,
-            code: js.code,
+            source: originalFile,
+            sourceParsed: js.code,
             phrases: newPhrases
         };
         socket.emit('devops', {

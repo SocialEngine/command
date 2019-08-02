@@ -4,8 +4,24 @@ const dir = require('./dir');
 const str = require('./str');
 const obj = require('./obj');
 
+const cwd = process.cwd();
+
+exports.newFile = function ({productId, file, body}) {
+    const folder = productId.split('/')[1];
+    const absolutePath = path.join(cwd, '/src', folder, file.replace(productId, ''));
+    const dirPath = path.dirname(absolutePath);
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, {
+            recursive: true
+        });
+    }
+    console.log(absolutePath);
+
+    fs.writeFileSync(absolutePath, body, 'utf-8');
+};
+
 exports.save = function (ordered) {
-    const productDir = path.join(process.cwd(), '/.se', ordered.id.split('/')[1]);
+    const productDir = path.join(cwd, '/.se', ordered.id.split('/')[1]);
     if (!fs.existsSync(productDir)) {
         fs.mkdirSync(productDir, {
             recursive: true
