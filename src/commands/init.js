@@ -35,7 +35,7 @@ async function syncProducts () {
     console.log('Ready!');
 }
 
-commander.command('init').action(async () => {
+commander.command('init').option('-r, --reconnect', 'Force reconnection').action(async (options) => {
     const createDirs = ['/src', '/.se'];
     for (const dir of createDirs) {
         const dirPath = path.join(cwd, dir);
@@ -44,7 +44,7 @@ commander.command('init').action(async () => {
         }
     }
 
-    if (!config.exits()) {
+    if (!config.exits() || options.reconnect !== undefined) {
         let uniteUrl = readline.question('SocialEngine Unite URL: ');
 
         if (!uniteUrl) {
