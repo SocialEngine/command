@@ -23,8 +23,12 @@ commander.command('watch').action(async () => {
             console.log('already watching...');
             return null;
         }
+
         console.log('Connected...');
-        client.emit('heartbeat', 'ping');
+
+        client.emit('devops:connect', {
+            config: config.get()
+        });
 
         const watchFor = ['add', 'change', 'unlink'];
         console.log('Watching:', srcDir);
