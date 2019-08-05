@@ -1,12 +1,57 @@
 const path = require('path');
 const fs = require('fs');
+const fetch = require('node-fetch');
 const dir = require('./dir');
 const str = require('./str');
 const obj = require('./obj');
+const config = require('./config');
+const {error, handleCatch} = require('./output');
 
 const cwd = process.cwd();
 
-exports.newFile = function ({productId, file, body}) {
+async function get (options = {}) {
+    const currentConfig = config.get();
+    let query = '';
+    let iteration = 0;
+    for (const key of Object.keys(options)) {
+        iteration++;
+        if (iteration !== 1) {
+            query += '&';
+        }
+        let value = options[key];
+        if (typeof value === 'boolean') {
+            value = (value ? 'true' : 'false');
+        }
+        query += key + '=' + options[key];
+    }
+
+    const request = await fetch(currentConfig.url + '/api/site/products?' + query, {
+        headers: {
+            'se-client': 'acp',
+            'se-api-key': currentConfig.apiKey,
+            'se-viewer-token': currentConfig.apiToken
+        }
+    });
+    const products = await request.json().catch(handleCatch);
+    if (!Array.isArray(products) && products.error !== undefined) {
+        error(products.error);
+    }
+    if (!products) {
+        error('Unable to connect to the API with your credentials.');
+    }
+
+    const records = [];
+    for (const record of products) {
+        if (record.id.substr(0, 4) === '@SE/') {
+            continue;
+        }
+        records.push(record);
+    }
+
+    return records;
+}
+
+function newFile ({productId, file, body}) {
     const folder = productId.split('/')[1];
     const absolutePath = path.join(cwd, '/src', folder, file.replace(productId, ''));
     const dirPath = path.dirname(absolutePath);
@@ -18,9 +63,9 @@ exports.newFile = function ({productId, file, body}) {
     console.log(absolutePath);
 
     fs.writeFileSync(absolutePath, body, 'utf-8');
-};
+}
 
-exports.save = function (ordered) {
+function save (ordered) {
     let isNew = false;
     const productDir = path.join(cwd, '/.se', ordered.id.split('/')[1]);
     if (!fs.existsSync(productDir)) {
@@ -136,4 +181,10 @@ exports.save = function (ordered) {
         'install',
         'phrases'
     ]), null, 4) + '\n', 'utf-8');
+}
+
+module.exports = {
+    newFile: newFile,
+    save: save,
+    get: get
 };

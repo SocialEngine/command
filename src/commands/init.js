@@ -1,5 +1,5 @@
 const config = require('../app/config');
-const {error, handleCatch} = require('../app/output');
+const {error} = require('../app/output');
 const str = require('../app/str');
 const product = require('../app/product');
 const commander = require('commander');
@@ -12,22 +12,9 @@ const cwd = process.cwd();
 const Spinner = require('cli-spinner').Spinner;
 
 async function syncProducts () {
-    const currentConfig = config.get();
-
-    const request = await fetch(currentConfig.url + '/api/site/products?forExport=true', {
-        headers: {
-            'se-client': 'acp',
-            'se-api-key': currentConfig.apiKey,
-            'se-viewer-token': currentConfig.apiToken
-        }
+    const products = await product.get({
+        forExport: true
     });
-    const products = await request.json().catch(handleCatch);
-    if (!Array.isArray(products) && products.error !== undefined) {
-        error(products.error);
-    }
-    if (!products) {
-        error('Unable to connect to the API with your credentials.');
-    }
 
     for (const data of products) {
         product.save(data);
