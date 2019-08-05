@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-exports.open = function (directory) {
+function open (directory) {
     const read = (dir) => {
         return fs.readdirSync(dir)
             .reduce((files, file) =>
@@ -12,24 +12,27 @@ exports.open = function (directory) {
     };
 
     return read(directory);
-};
+}
 
-exports.delete = function (dir) {
-    this.open(dir).forEach(file => {
+function deleteDir (dir) {
+    open(dir).forEach(file => {
         fs.unlinkSync(file);
     });
     const baseFiles = [];
     const read = (dir) => {
         return fs.readdirSync(dir)
             .reduce((files, file) => {
-                    if (fs.statSync(path.join(dir, file)).isDirectory()) {
-                        baseFiles.push(path.join(dir, file));
-                        if (Array.isArray(files)) {
-                            files.concat(read(path.join(dir, file)));
-                        }
+                if (fs.statSync(path.join(dir, file)).isDirectory()) {
+                    baseFiles.push(path.join(dir, file));
+                    if (!Array.isArray(files)) {
+                        files = [];
                     }
-                },
-                []);
+                    if (Array.isArray(files)) {
+                        files.concat(read(path.join(dir, file)));
+                    }
+                }
+            },
+            []);
     };
     try {
         read(dir);
@@ -41,4 +44,9 @@ exports.delete = function (dir) {
         console.error(e);
         process.exit(1);
     }
+}
+
+module.exports = {
+    open: open,
+    delete: deleteDir
 };
