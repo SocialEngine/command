@@ -6,7 +6,7 @@ const parse = require('../app/parse');
 module.exports = function (socket, event) {
     return async function (file) {
         const ext = file.split('.').pop();
-        if (!['js'].includes(ext)) {
+        if (!['js', 'html'].includes(ext)) {
             return;
         }
 
@@ -22,33 +22,40 @@ module.exports = function (socket, event) {
         }
         const manifest = require(path.join(manifestDir, '/manifest.json'));
         const fileName = manifest.id + relativeFile.replace(productId, '');
+        const originalFile = fs.readFileSync(file, 'utf-8');
+        const newPhrases = {};
+        let sourceParsed = null;
+
         console.log('[' + event + ']:', fileName);
 
-        const originalFile = fs.readFileSync(file, 'utf-8');
-        const parsed = await parse.file(fileName, originalFile);
-        const js = parse.js(parsed.code, false, fileName);
-        let newPhrases = {};
-        const phrases = js.phrases;
-        for (let phrase of Object.keys(phrases)) {
-            const sub = phrase.substr(0, 2);
-            const hashPath = path.join(manifestDir, '/phrases', sub, phrase + '.txt');
-            if (!fs.existsSync(hashPath)) {
-                console.log('[new][phrase][' + phrase + ']:', phrases[phrase]);
-                newPhrases[phrase] = phrases[phrase];
-                const subDir = path.dirname(hashPath);
-                if (!fs.existsSync(subDir)) {
-                    fs.mkdirSync(subDir);
+        if (ext === 'js') {
+            const parsed = await parse.file(fileName, originalFile);
+            const js = parse.js(parsed.code, false, fileName);
+            const phrases = js.phrases;
+            for (let phrase of Object.keys(phrases)) {
+                const sub = phrase.substr(0, 2);
+                const hashPath = path.join(manifestDir, '/phrases', sub, phrase + '.txt');
+                if (!fs.existsSync(hashPath)) {
+                    console.log('[new][phrase][' + phrase + ']:', phrases[phrase]);
+                    newPhrases[phrase] = phrases[phrase];
+                    const subDir = path.dirname(hashPath);
+                    if (!fs.existsSync(subDir)) {
+                        fs.mkdirSync(subDir);
+                    }
+                    fs.writeFileSync(hashPath, phrases[phrase], 'utf-8');
                 }
-                fs.writeFileSync(hashPath, phrases[phrase], 'utf-8');
             }
+
+            sourceParsed = js.code;
         }
 
         const data = {
             component: fileName,
             source: originalFile,
-            sourceParsed: js.code,
+            sourceParsed: sourceParsed,
             phrases: newPhrases
         };
+
         socket.emit('devops', {
             file: {
                 event: event,

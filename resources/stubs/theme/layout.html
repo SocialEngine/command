@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="{{LANG_ID}}" dir="{{LANG_DIR}}">
+<head>
+    <title>{{TITLE}}</title>
+    {{HEAD}}
+</head>
+<body>
+<header role="banner" class="header">
+    <div class="container h-100">
+        <div class="d-flex align-items-center h-100">
+            {{LOGO}}
+            {{MENU location="main" iconClassName="fa-fw"}}
+            <div class="ml-auto d-flex align-items-center">
+                {{MENU location="mini" viewer="member" className="align-items-center"}}
+                {{MENU location="guest" viewer="guest" className="align-items-center"}}
+            </div>
+        </div>
+    </div>
+</header>
+{{CONTENT}}
+{{FOOTER}}
+</body>
+</html>

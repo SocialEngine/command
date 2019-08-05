@@ -26,7 +26,7 @@ async function syncProducts () {
         error(products.error);
     }
     if (!products) {
-        error('Unable to connect to the API with your credentials.')
+        error('Unable to connect to the API with your credentials.');
     }
 
     for (const data of products) {
@@ -97,13 +97,13 @@ commander.command('init').option('-r, --reconnect', 'Force reconnection').action
                 spinner.stop();
                 await syncProducts();
                 process.exit(0);
-                return null;
-            }
-            checkIteration++;
-            if (checkIteration > 50) {
-                clearInterval(check);
-                console.log('Failed to connect...');
-                process.exit(1);
+            } else {
+                checkIteration++;
+                if (checkIteration > 50) {
+                    clearInterval(check);
+                    console.log('Failed to connect...');
+                    process.exit(1);
+                }
             }
         }, 1000);
     } else {

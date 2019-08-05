@@ -21,8 +21,10 @@ exports.newFile = function ({productId, file, body}) {
 };
 
 exports.save = function (ordered) {
+    let isNew = false;
     const productDir = path.join(cwd, '/.se', ordered.id.split('/')[1]);
     if (!fs.existsSync(productDir)) {
+        isNew = true;
         fs.mkdirSync(productDir, {
             recursive: true
         });
@@ -101,6 +103,31 @@ exports.save = function (ordered) {
                 });
             }
             fs.writeFileSync(path.join(subDir, key + '.txt'), ordered.phrases[key], 'utf-8');
+        }
+    }
+
+    if (isNew) {
+        console.log('its a theme');
+        const stubDir = path.join(__dirname, '/../../resources/stubs/', ordered.type);
+        const productDir = path.join(cwd, '/src/', ordered.id.split('/')[1]);
+        if (!fs.existsSync(productDir)) {
+            fs.mkdirSync(productDir);
+        }
+
+        if (fs.existsSync(stubDir)) {
+            const stubFiles = dir.open(stubDir);
+            for (let file of stubFiles) {
+                const relativePath = file.replace(stubDir, '');
+                const baseDir = path.dirname(path.join(productDir, relativePath));
+                if (!fs.existsSync(baseDir)) {
+                    fs.mkdirSync(baseDir, {
+                        recursive: true
+                    });
+                }
+                let content = fs.readFileSync(file, 'utf-8');
+                content = content.replace(/{{PRODUCT_ID}}/g, ordered.id);
+                fs.writeFileSync(path.join(baseDir, path.basename(relativePath)), content);
+            }
         }
     }
 
