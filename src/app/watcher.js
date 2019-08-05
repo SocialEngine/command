@@ -40,7 +40,9 @@ module.exports = function (socket, event) {
                     newPhrases[phrase] = phrases[phrase];
                     const subDir = path.dirname(hashPath);
                     if (!fs.existsSync(subDir)) {
-                        fs.mkdirSync(subDir);
+                        fs.mkdirSync(subDir, {
+                            recursive: true
+                        });
                     }
                     fs.writeFileSync(hashPath, phrases[phrase], 'utf-8');
                 }
