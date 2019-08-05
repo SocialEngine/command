@@ -15,6 +15,7 @@ commander.command('reset').action(() => {
                 dir.delete(absolutePath);
             }
             fs.mkdirSync(absolutePath);
+            fs.writeFileSync(path.join(absolutePath, '/.gitkeep'), '', 'utf-8');
         }
     }
 });

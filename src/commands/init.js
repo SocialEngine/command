@@ -41,6 +41,7 @@ commander.command('init').option('-r, --reconnect', 'Force reconnection').action
         const dirPath = path.join(cwd, dir);
         if (!fs.existsSync(dirPath)) {
             fs.mkdirSync(dirPath);
+            fs.writeFileSync(path.join(dirPath, '/.gitkeep'), '', 'utf-8');
         }
     }
 
