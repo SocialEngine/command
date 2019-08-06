@@ -19,7 +19,7 @@ async function syncProducts () {
     for (const data of products) {
         product.save(data);
     }
-    console.log('Ready!');
+    console.log('Great Success! Connected to Unite DevOps');
 }
 
 commander.command('init').option('-r, --reconnect', 'Force reconnection').action(async (options) => {
