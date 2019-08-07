@@ -152,7 +152,6 @@ function save (ordered) {
     }
 
     if (isNew) {
-        console.log('its a theme');
         const stubDir = path.join(__dirname, '/../../resources/stubs/', ordered.type);
         const productDir = path.join(cwd, '/src/', ordered.id.split('/')[1]);
         if (!fs.existsSync(productDir)) {
