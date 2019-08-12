@@ -75,8 +75,6 @@ function save (ordered) {
         });
     }
 
-    console.log('productDir', productDir);
-
     if (ordered.install !== undefined) {
         const hashRules = {
             menus: ['location', 'href'],
@@ -180,10 +178,54 @@ function save (ordered) {
         'install',
         'phrases'
     ]), null, 4) + '\n', 'utf-8');
+
+    if (ordered.moduleCode !== undefined) {
+        saveModuleCode({
+            productId: ordered.id,
+            code: ordered.moduleCode
+        });
+    }
+
+    if (ordered.install.listeners !== undefined) {
+        for (const listener of ordered.install.listeners) {
+            saveEventListener({
+                productId: ordered.id,
+                id: listener.id,
+                code: listener.code
+            });
+        }
+    }
+}
+
+function getServerDir (productId) {
+    const productDir = path.join(cwd, '/srv', productId.split('/')[1]);
+    if (!fs.existsSync(productDir)) {
+        fs.mkdirSync(productDir, {
+            recursive: true
+        });
+    }
+    return productDir;
+}
+
+function saveModuleCode ({productId, code}) {
+    const productDir = getServerDir(productId);
+    const fileName = path.join(productDir, '/module.js');
+    fs.writeFileSync(fileName, code, 'utf-8');
+    console.log('[local][save]:', fileName);
+}
+
+function saveEventListener ({productId, id, code}) {
+    const productDir = getServerDir(productId);
+    const name = id + '.js';
+    const fileName = path.join(productDir, name);
+    console.log('[local][save]:', fileName);
+    fs.writeFileSync(fileName, code, 'utf-8');
 }
 
 module.exports = {
     newFile: newFile,
     save: save,
-    get: get
+    get: get,
+    saveModuleCode: saveModuleCode,
+    saveEventListener: saveEventListener
 };

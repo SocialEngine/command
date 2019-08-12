@@ -2,12 +2,19 @@ const commander = require('commander');
 const path = require('path');
 const fs = require('fs');
 const product = require('../app/product');
+const {Spinner} = require('../app/output');
 
 commander.command('pull').action(async () => {
+    const spinner = Spinner();
+    spinner.start();
     const records = await product.get({
-        include: 'files'
+        include: 'files,install',
+        notSE: true
     });
+    spinner.stop();
+    console.log('---');
     for (const record of records) {
+        console.log('#', record.id);
         const folder = record.id.split('/')[1];
         const folderPath = path.join(process.cwd(), '/src', folder);
         if (!fs.existsSync(folderPath)) {
@@ -26,5 +33,7 @@ commander.command('pull').action(async () => {
                 fs.writeFileSync(filePath, file.source, 'utf-8');
             }
         }
+
+        product.save(record);
     }
 });

@@ -9,6 +9,7 @@ const config = require('../app/config');
 const {error} = require('../app/output');
 
 const srcDir = path.join(process.cwd(), '/src');
+const serverDir = path.join(process.cwd(), '/srv');
 
 commander.command('watch').action(async () => {
     if (!config.exits()) {
@@ -20,24 +21,34 @@ commander.command('watch').action(async () => {
 
     client.on('connect', function () {
         if (connections >= 1) {
-            console.log('already watching...');
             return null;
         }
 
-        console.log('Connected...');
+        console.log('Connected to SocialEngine Unite...');
 
         client.emit('devops:connect', {
             config: config.get()
         });
 
         const watchFor = ['add', 'change', 'unlink'];
-        console.log('Watching:', srcDir);
+        console.log('Watching:');
+        console.log(' -', srcDir);
+        console.log(' -', serverDir);
+
         const watch = chokidar.watch(srcDir, {
             ignoreInitial: true
         });
 
         for (const event of watchFor) {
-            watch.on(event, watcher(client, event));
+            watch.on(event, watcher.srcFiles(client, event));
+        }
+
+        const watchServerDir = chokidar.watch(serverDir, {
+            ignoreInitial: true
+        });
+
+        for (const event of watchFor) {
+            watchServerDir.on(event, watcher.serverFiles(client, event));
         }
 
         connections++;
@@ -45,6 +56,12 @@ commander.command('watch').action(async () => {
 
     client.on('devops:' + config.get('hash'), function (params) {
         switch (params.action) {
+            case 'eventListener':
+                product.saveEventListener(params.data);
+                break;
+            case 'moduleCode':
+                product.saveModuleCode(params.data);
+                break;
             case 'newFile':
                 product.newFile(params.data);
                 break;

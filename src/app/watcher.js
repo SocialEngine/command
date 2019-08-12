@@ -3,7 +3,44 @@ const path = require('path');
 const fs = require('fs');
 const parse = require('../app/parse');
 
-module.exports = function (socket, event) {
+function serverFiles (socket, event) {
+    return async function (file) {
+        const ext = file.split('.').pop();
+        if (!['js'].includes(ext)) {
+            return;
+        }
+        const relativeFile = file.split('/srv/')[1];
+        const productId = relativeFile.split('/')[0];
+        const manifestDir = path.join(process.cwd(), '/.se', productId);
+        if (!fs.existsSync(manifestDir)) {
+            return;
+        }
+        const manifest = require(path.join(manifestDir, '/manifest.json'));
+        const actualFile = relativeFile.replace(productId + '/', '');
+        if (!actualFile) {
+            return;
+        }
+
+        console.log('[' + event + ']:', relativeFile);
+
+        const data = {
+            serverFile: actualFile,
+            code: fs.readFileSync(file, 'utf-8')
+        };
+        socket.emit('devops', {
+            file: {
+                event: event,
+                ...data
+            },
+            manifest: {
+                id: manifest.id
+            },
+            config: config.get()
+        });
+    };
+}
+
+function srcFiles (socket, event) {
     return async function (file) {
         const ext = file.split('.').pop();
         if (!['js', 'html'].includes(ext)) {
@@ -69,4 +106,9 @@ module.exports = function (socket, event) {
             config: config.get()
         });
     };
+}
+
+module.exports = {
+    srcFiles: srcFiles,
+    serverFiles: serverFiles
 };
