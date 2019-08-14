@@ -3,7 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const {error} = require('./output');
 
-const configFile = path.join(__dirname, '/../../.cache/config.json');
+const configFile = path.join(process.cwd(), '/.cache/config.json');
+const configDir = path.dirname(configFile);
+if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir);
+}
 
 exports.exits = function () {
     return fs.existsSync(configFile);
