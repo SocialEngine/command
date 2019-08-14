@@ -5,7 +5,7 @@ const fs = require('fs');
 const dir = require('../app/dir');
 
 commander.command('reset').action(() => {
-    const toDelete = ['/.se', '/src'];
+    const toDelete = ['/.se', '/src', '/srv'];
     const answer = readline.question('Are you sure? [y/n]: ');
     if (typeof answer === 'string' && answer === 'y') {
         console.log('Resetting:', toDelete);
