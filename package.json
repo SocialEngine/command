@@ -1,6 +1,6 @@
 {
   "name": "@socialengine/command",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "SocialEngine Unite CLI",
   "main": "src/console.js",
   "bin": "bin/console",

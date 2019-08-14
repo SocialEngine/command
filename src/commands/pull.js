@@ -29,7 +29,7 @@ commander.command('pull').action(async () => {
                         recursive: true
                     });
                 }
-                console.log('[file]:', file);
+                console.log('[local][save]:', filePath);
                 fs.writeFileSync(filePath, file.source, 'utf-8');
             }
         }
