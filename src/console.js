@@ -2,6 +2,14 @@
 const path = require('path');
 const commander = require('commander');
 const fs = require('fs');
+const config = require('./app/config');
+const Sentry = require('@sentry/node');
+
+if (config.exits() && config.get('sentry')) {
+    Sentry.init({
+        dsn: config.get('sentry')
+    });
+}
 
 const commandDir = path.join(__dirname, '/commands');
 const files = fs.readdirSync(commandDir);

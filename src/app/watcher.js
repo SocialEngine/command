@@ -3,6 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const parse = require('../app/parse');
 
+function throwError (e) {
+    console.log('Caught Error:');
+    console.error(e);
+}
+
 function serverFiles (socket, event) {
     return async function (file) {
         const ext = file.split('.').pop();
@@ -40,32 +45,32 @@ function serverFiles (socket, event) {
     };
 }
 
-function srcFiles (socket, event) {
-    return async function (file) {
-        const ext = file.split('.').pop();
-        if (!['js', 'html'].includes(ext)) {
-            return;
-        }
+async function handleFile (socket, event, file) {
+    const ext = file.split('.').pop();
+    if (!['js', 'html'].includes(ext)) {
+        return;
+    }
 
-        if (event === 'unlink') {
-            return;
-        }
+    if (event === 'unlink') {
+        return;
+    }
 
-        const relativeFile = file.split('/src/')[1];
-        const productId = relativeFile.split('/')[0];
-        const manifestDir = path.join(process.cwd(), '/.se', productId);
-        if (!fs.existsSync(manifestDir)) {
-            return;
-        }
-        const manifest = require(path.join(manifestDir, '/manifest.json'));
-        const fileName = manifest.id + relativeFile.replace(productId, '');
-        const originalFile = fs.readFileSync(file, 'utf-8');
-        const newPhrases = {};
-        let sourceParsed = null;
+    const relativeFile = file.split('/src/')[1];
+    const productId = relativeFile.split('/')[0];
+    const manifestDir = path.join(process.cwd(), '/.se', productId);
+    if (!fs.existsSync(manifestDir)) {
+        return;
+    }
+    const manifest = require(path.join(manifestDir, '/manifest.json'));
+    const fileName = manifest.id + relativeFile.replace(productId, '');
+    const originalFile = fs.readFileSync(file, 'utf-8');
+    const newPhrases = {};
+    let sourceParsed = null;
 
-        console.log('[' + event + ']:', fileName);
+    console.log('[' + event + ']:', fileName);
 
-        if (ext === 'js') {
+    if (ext === 'js') {
+        try {
             const parsed = await parse.file(fileName, originalFile);
             const js = parse.js(parsed.code, false, fileName);
             const phrases = js.phrases;
@@ -86,25 +91,35 @@ function srcFiles (socket, event) {
             }
 
             sourceParsed = js.code;
+        } catch (e) {
+            throwError(e);
+            return;
         }
+    }
 
-        const data = {
-            component: fileName,
-            source: originalFile,
-            sourceParsed: sourceParsed,
-            phrases: newPhrases
-        };
+    const data = {
+        component: fileName,
+        source: originalFile,
+        sourceParsed: sourceParsed,
+        phrases: newPhrases
+    };
 
-        socket.emit('devops', {
-            file: {
-                event: event,
-                ...data
-            },
-            manifest: {
-                id: manifest.id
-            },
-            config: config.get()
-        });
+    socket.emit('devops', {
+        file: {
+            event: event,
+            ...data
+        },
+        manifest: {
+            id: manifest.id
+        },
+        config: config.get()
+    });
+}
+
+function srcFiles (socket, event) {
+    return function (file) {
+        handleFile(socket, event, file)
+            .catch(throwError);
     };
 }
 

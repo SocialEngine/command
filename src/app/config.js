@@ -9,6 +9,16 @@ if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir);
 }
 
+exports.update = function (key, value) {
+    if (this.exits()) {
+        const current = this.get();
+        this.save({
+            ...current,
+            [key]: value
+        });
+    }
+};
+
 exports.exits = function () {
     return fs.existsSync(configFile);
 };
