@@ -2,6 +2,7 @@ const config = require('./config');
 const path = require('path');
 const fs = require('fs');
 const parse = require('../app/parse');
+const sep = path.sep;
 
 function throwError (e) {
     console.log('Caught Error:');
@@ -14,8 +15,8 @@ function serverFiles (socket, event) {
         if (!['js'].includes(ext)) {
             return;
         }
-        const relativeFile = file.split('/srv/')[1];
-        const productId = relativeFile.split('/')[0];
+        const relativeFile = file.split(sep + 'srv' + sep)[1];
+        const productId = relativeFile.split(sep)[0];
         const manifestDir = path.join(process.cwd(), '/.se', productId);
         if (!fs.existsSync(manifestDir)) {
             return;
@@ -55,8 +56,8 @@ async function handleFile (socket, event, file) {
         return;
     }
 
-    const relativeFile = file.split('/src/')[1];
-    const productId = relativeFile.split('/')[0];
+    const relativeFile = file.split(sep + 'src' + sep)[1];
+    const productId = relativeFile.split(sep)[0];
     const manifestDir = path.join(process.cwd(), '/.se', productId);
     if (!fs.existsSync(manifestDir)) {
         return;
@@ -98,7 +99,7 @@ async function handleFile (socket, event, file) {
     }
 
     const data = {
-        component: fileName,
+        component: fileName.replace(/\\/g, '/'),
         source: originalFile,
         sourceParsed: sourceParsed,
         phrases: newPhrases
