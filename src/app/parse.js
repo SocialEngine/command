@@ -100,6 +100,7 @@ exports.css = async function css (name, content) {
 
 exports.file = async function file (name, content, options = {}) {
     const dependencies = [];
+    name = name.replace(/\\/g, '/');
     if (typeof content !== 'string') {
         throw new Error('' + name + ' is not passing a string.');
     }

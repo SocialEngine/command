@@ -2,6 +2,7 @@ const config = require('./config');
 const path = require('path');
 const fs = require('fs');
 const parse = require('../app/parse');
+const sep = path.sep;
 
 function throwError (e) {
     console.log('Caught Error:');
@@ -14,8 +15,8 @@ function serverFiles (socket, event) {
         if (!['js'].includes(ext)) {
             return;
         }
-        const relativeFile = file.split('/srv/')[1];
-        const productId = relativeFile.split('/')[0];
+        const relativeFile = file.split(sep + 'srv' + sep)[1];
+        const productId = relativeFile.split(sep)[0];
         const manifestDir = path.join(process.cwd(), '/.se', productId);
         if (!fs.existsSync(manifestDir)) {
             return;
@@ -51,23 +52,26 @@ async function handleFile (socket, event, file) {
         return;
     }
 
-    const relativeFile = file.split('/src/')[1];
-    const productId = relativeFile.split('/')[0];
+    if (event === 'unlink') {
+        return;
+    }
+
+    const relativeFile = file.split(sep + 'src' + sep)[1];
+    const productId = relativeFile.split(sep)[0];
     const manifestDir = path.join(process.cwd(), '/.se', productId);
     if (!fs.existsSync(manifestDir)) {
         return;
     }
     const manifest = require(path.join(manifestDir, '/manifest.json'));
     const fileName = manifest.id + relativeFile.replace(productId, '');
+    const originalFile = fs.readFileSync(file, 'utf-8');
     const newPhrases = {};
-    let originalFile = null;
     let sourceParsed = null;
 
     console.log('[' + event + ']:', fileName);
 
-    if (ext === 'js' && event !== 'unlink') {
+    if (ext === 'js') {
         try {
-            originalFile = fs.readFileSync(file, 'utf-8');
             const parsed = await parse.file(fileName, originalFile);
             const js = parse.js(parsed.code, false, fileName);
             const phrases = js.phrases;
@@ -95,7 +99,7 @@ async function handleFile (socket, event, file) {
     }
 
     const data = {
-        component: fileName,
+        component: fileName.replace(/\\/g, '/'),
         source: originalFile,
         sourceParsed: sourceParsed,
         phrases: newPhrases
