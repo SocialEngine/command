@@ -51,10 +51,6 @@ async function handleFile (socket, event, file) {
         return;
     }
 
-    if (event === 'unlink') {
-        return;
-    }
-
     const relativeFile = file.split('/src/')[1];
     const productId = relativeFile.split('/')[0];
     const manifestDir = path.join(process.cwd(), '/.se', productId);
@@ -63,14 +59,15 @@ async function handleFile (socket, event, file) {
     }
     const manifest = require(path.join(manifestDir, '/manifest.json'));
     const fileName = manifest.id + relativeFile.replace(productId, '');
-    const originalFile = fs.readFileSync(file, 'utf-8');
     const newPhrases = {};
+    let originalFile = null;
     let sourceParsed = null;
 
     console.log('[' + event + ']:', fileName);
 
-    if (ext === 'js') {
+    if (ext === 'js' && event !== 'unlink') {
         try {
+            originalFile = fs.readFileSync(file, 'utf-8');
             const parsed = await parse.file(fileName, originalFile);
             const js = parse.js(parsed.code, false, fileName);
             const phrases = js.phrases;
