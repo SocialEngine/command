@@ -3,24 +3,15 @@ const str = require('./str');
 const path = require('path');
 const babel = require('babel-core');
 const uglify = require('uglify-es');
+const webpack = require('webpack');
 const fs = require('fs');
 
-let modulePath = path.join(process.cwd(), '/node_modules');
-if (!fs.existsSync(modulePath)) {
+const localModulePath = path.join(process.cwd(), '/node_modules');
+let modulePath = localModulePath;
+let babelJsx = path.join(process.cwd(), '/node_modules/babel-plugin-transform-react-jsx');
+if (!fs.existsSync(babelJsx)) {
     modulePath = path.join(__dirname, '/../../node_modules');
 }
-
-const internals = [
-    'react',
-    'react-dom',
-    'prop-types',
-    'path-to-regexp',
-    'breeze',
-    'validator',
-    'open-graph',
-    'jquery',
-    'moment'
-];
 
 const browserList = {
     development: {
@@ -45,6 +36,90 @@ function content (content) {
         phrases: phrases
     };
 }
+
+exports.buildExternal = function buildExternal (module) {
+    return new Promise(function (resolve, reject) {
+        const targets = {
+            browsers: browserList.production.browsers
+        };
+
+        const moduleRules = {
+            rules: [
+                {
+                    test: /\.js$/,
+                    use: {
+                        loader: path.join(modulePath, 'babel-loader'),
+                        options: {
+                            presets: [
+                                [path.join(modulePath, 'babel-preset-env'), {
+                                    targets: targets,
+                                    debug: false
+                                }]
+                            ],
+                            plugins: [
+                                [path.join(modulePath, 'babel-plugin-transform-react-jsx')],
+                                [path.join(modulePath, 'babel-plugin-transform-class-properties')],
+                                [path.join(modulePath, 'babel-plugin-transform-object-rest-spread')]
+                            ]
+                        }
+                    }
+                }
+            ]
+        };
+
+        const libName = module.replace(/-/g, '');
+        const config = {
+            target: 'web',
+            entry: [
+                path.join(localModulePath, module)
+            ],
+            module: moduleRules,
+            externals: {
+                'jquery': 'window.$',
+                'socket.io-client': 'window.io',
+                'raven-js': 'window.Raven',
+                'react': 'window.React',
+                'react-dom': 'window.ReactDOM',
+                'prop-types': 'window.PropTypes',
+                'path-to-regexp': 'window.router',
+                'moment': 'window.moment'
+            },
+            resolve: {
+                symlinks: false
+            },
+            output: {
+                filename: module + '.js',
+                path: path.join(process.cwd(), '/.cache'),
+                library: [libName]
+            }
+        };
+
+        webpack(config, (err, stats) => {
+            if (err) {
+                if (err.details) {
+                    reject(err.details);
+                } else {
+                    reject(err.stack || err);
+                }
+                return;
+            }
+
+            const info = stats.toJson();
+
+            if (stats.hasErrors()) {
+                return reject(
+                    info.errors.forEach(err => ' -> ' + console.error(err)).join('\n')
+                );
+            }
+            const workingFile = path.join(process.cwd(), '/.cache', module + '.js');
+            let output = fs.readFileSync(workingFile, 'utf-8');
+            output = '\t_createComponent(\'' + module + '\', function () ' +
+                '{' + output + ' \n return ' + libName + ';});\n';
+            fs.unlinkSync(workingFile);
+            resolve(output);
+        });
+    });
+};
 
 exports.js = function js (data, minify = true, name = 'unknown') {
     const parsed = content(data);
@@ -140,10 +215,7 @@ exports.file = async function file (name, content, options = {}) {
     content = content.replace(/require\('(.*?)'\)/g, (e, file) => {
         file = file.replace('~', '');
         if (file.substr(0, 1) !== '@') {
-            if (internals.includes(file)) {
-                return '_require(\'' + file + '\')';
-            }
-            throw new Error('Unknown required component: ' + file);
+            return '_require(\'' + file + '\')';
         }
 
         if (file.indexOf('.') === -1) {
