@@ -66,32 +66,37 @@ async function handleFile (socket, event, file) {
 
     console.log('[' + event + ']:', fileName);
 
-    if (ext === 'js' && event !== 'unlink') {
-        try {
-            originalFile = fs.readFileSync(file, 'utf-8');
-            const parsed = await parse.file(fileName, originalFile);
-            const js = parse.js(parsed.code, false, fileName);
-            const phrases = js.phrases;
-            for (let phrase of Object.keys(phrases)) {
-                const sub = phrase.substr(0, 2);
-                const hashPath = path.join(manifestDir, '/phrases', sub, phrase + '.txt');
-                if (!fs.existsSync(hashPath)) {
-                    console.log('[new][phrase][' + phrase + ']:', phrases[phrase]);
-                    newPhrases[phrase] = phrases[phrase];
-                    const subDir = path.dirname(hashPath);
-                    if (!fs.existsSync(subDir)) {
-                        fs.mkdirSync(subDir, {
-                            recursive: true
-                        });
+    if (event !== 'unlink') {
+        if (ext === 'js') {
+            try {
+                originalFile = fs.readFileSync(file, 'utf-8');
+                const parsed = await parse.file(fileName, originalFile);
+                const js = parse.js(parsed.code, false, fileName);
+                const phrases = js.phrases;
+                for (let phrase of Object.keys(phrases)) {
+                    const sub = phrase.substr(0, 2);
+                    const hashPath = path.join(manifestDir, '/phrases', sub, phrase + '.txt');
+                    if (!fs.existsSync(hashPath)) {
+                        console.log('[new][phrase][' + phrase + ']:', phrases[phrase]);
+                        newPhrases[phrase] = phrases[phrase];
+                        const subDir = path.dirname(hashPath);
+                        if (!fs.existsSync(subDir)) {
+                            fs.mkdirSync(subDir, {
+                                recursive: true
+                            });
+                        }
+                        fs.writeFileSync(hashPath, phrases[phrase], 'utf-8');
                     }
-                    fs.writeFileSync(hashPath, phrases[phrase], 'utf-8');
                 }
-            }
 
-            sourceParsed = js.code;
-        } catch (e) {
-            throwError(e);
-            return;
+                sourceParsed = js.code;
+            } catch (e) {
+                throwError(e);
+                return;
+            }
+        } else if (ext === 'html') {
+            originalFile = fs.readFileSync(file, 'utf-8');
+            sourceParsed = originalFile;
         }
     }
 
