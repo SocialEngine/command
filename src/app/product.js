@@ -4,10 +4,47 @@ const fetch = require('node-fetch');
 const dir = require('./dir');
 const str = require('./str');
 const obj = require('./obj');
+const parse = require('./parse');
 const config = require('./config');
 const {error, handleCatch} = require('./output');
 
 const cwd = process.cwd();
+
+async function push (product) {
+    const currentConfig = config.get();
+    const sep = path.sep;
+    const dirPath = path.join(process.cwd(), '/src/', product.id.replace(product.vendor + '/', ''));
+    if (fs.existsSync(dirPath)) {
+        const data = {
+            files: []
+        };
+        const files = dir.open(dirPath);
+        for (const file of files) {
+            const originalFile = fs.readFileSync(file, 'utf-8');
+            const relativeFile = product.vendor + '/' + file.split(sep + 'src' + sep)[1];
+            const parsed = await parse.file(relativeFile, originalFile);
+            const js = parse.js(parsed.code, false, relativeFile);
+            data.files.push({
+                component: relativeFile,
+                source: originalFile,
+                sourceParsed: js.code
+            });
+        }
+        const request = await fetch(currentConfig.url + '/api/site/products/' + product.id, {
+            method: 'PUT',
+            body: JSON.stringify({
+                push: data
+            }),
+            headers: {
+                'se-client': 'acp',
+                'se-api-key': currentConfig.apiKey,
+                'se-viewer-token': currentConfig.apiToken,
+                'content-type': 'application/json'
+            }
+        });
+        return request.json().catch(handleCatch);
+    }
+}
 
 async function get (options = {}) {
     const currentConfig = config.get();
@@ -229,6 +266,7 @@ module.exports = {
     newFile: newFile,
     save: save,
     get: get,
+    push: push,
     saveModuleCode: saveModuleCode,
     saveEventListener: saveEventListener
 };
