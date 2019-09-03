@@ -52,6 +52,12 @@ async function handleFile (socket, event, file) {
         return;
     }
 
+    const pushFile = file + '.tmp';
+    if (fs.existsSync(pushFile)) {
+        fs.unlinkSync(pushFile);
+        return;
+    }
+
     const relativeFile = file.split(sep + 'src' + sep)[1];
     const productId = relativeFile.split(sep)[0];
     const manifestDir = path.join(process.cwd(), '/.se', productId);

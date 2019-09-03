@@ -51,17 +51,20 @@ async function get (options = {}) {
     return records;
 }
 
-function newFile ({productId, file, body}) {
+function newFile ({productId, file, body, pushFile = false}) {
     const folder = productId.split('/')[1];
     const absolutePath = path.join(cwd, '/src', folder, file.replace(productId, ''));
     const dirPath = path.dirname(absolutePath);
+    const absolutePathTmp = absolutePath + '.tmp';
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, {
             recursive: true
         });
     }
-    console.log(absolutePath);
 
+    if (pushFile) {
+        fs.writeFileSync(absolutePathTmp, '---', 'utf-8');
+    }
     fs.writeFileSync(absolutePath, body, 'utf-8');
 }
 
