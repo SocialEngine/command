@@ -12,7 +12,8 @@ const cwd = process.cwd();
 
 async function getFiles (product) {
     const sep = path.sep;
-    const dirPath = path.join(process.cwd(), '/src/', product.id.split('/')[1]);
+    const parts = product.id.split('/');
+    const dirPath = path.join(process.cwd(), '/src/', parts[1]);
     const data = {
         files: []
     };
@@ -20,7 +21,7 @@ async function getFiles (product) {
         const files = dir.open(dirPath);
         for (const file of files) {
             const originalFile = fs.readFileSync(file, 'utf-8');
-            const relativeFile = product.vendor + '/' + file.split(sep + 'src' + sep)[1];
+            const relativeFile = parts[0] + '/' + file.split(sep + 'src' + sep)[1];
             const parsed = await parse.file(relativeFile, originalFile);
             const js = parse.js(parsed.code, false, relativeFile);
             data.files.push({
