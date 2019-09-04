@@ -4,6 +4,7 @@ const commander = require('commander');
 const fs = require('fs');
 const config = require('./app/config');
 const Sentry = require('@sentry/node');
+const dotenv = require('dotenv');
 
 if (config.exits() && config.get('sentry')) {
     Sentry.init({
@@ -11,6 +12,12 @@ if (config.exits() && config.get('sentry')) {
     });
 }
 
+const envFile = path.join(process.cwd(), '/.cache/env');
+if (fs.existsSync(envFile)) {
+    dotenv.config({
+        path: envFile
+    });
+}
 const commandDir = path.join(__dirname, '/commands');
 const files = fs.readdirSync(commandDir);
 

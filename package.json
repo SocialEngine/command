@@ -7,6 +7,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/SocialEngine/command.git"
+    },
   "author": "Webligo",
   "license": "MIT",
   "dependencies": {
@@ -23,6 +27,7 @@
     "chokidar": "^3.0.2",
     "cli-spinner": "^0.2.10",
     "commander": "^2.20.0",
+    "dotenv": "^8.1.0",
     "node-fetch": "^2.6.0",
     "readline-sync": "^1.4.10",
     "socket.io-client": "^2.2.0",

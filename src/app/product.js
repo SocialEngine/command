@@ -10,6 +10,29 @@ const {error, handleCatch} = require('./output');
 
 const cwd = process.cwd();
 
+async function getFiles (product) {
+    const sep = path.sep;
+    const dirPath = path.join(process.cwd(), '/src/', product.id.split('/')[1]);
+    const data = {
+        files: []
+    };
+    if (fs.existsSync(dirPath)) {
+        const files = dir.open(dirPath);
+        for (const file of files) {
+            const originalFile = fs.readFileSync(file, 'utf-8');
+            const relativeFile = product.vendor + '/' + file.split(sep + 'src' + sep)[1];
+            const parsed = await parse.file(relativeFile, originalFile);
+            const js = parse.js(parsed.code, false, relativeFile);
+            data.files.push({
+                component: relativeFile,
+                source: originalFile,
+                sourceParsed: js.code
+            });
+        }
+    }
+    return data;
+}
+
 async function push (product) {
     const currentConfig = config.get();
     const sep = path.sep;
@@ -268,5 +291,6 @@ module.exports = {
     get: get,
     push: push,
     saveModuleCode: saveModuleCode,
-    saveEventListener: saveEventListener
+    saveEventListener: saveEventListener,
+    getFiles: getFiles
 };
