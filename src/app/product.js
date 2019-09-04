@@ -43,14 +43,21 @@ async function push (product) {
         };
         const files = dir.open(dirPath);
         for (const file of files) {
-            const originalFile = fs.readFileSync(file, 'utf-8');
+            let source = fs.readFileSync(file, 'utf-8');
+            let sourceParsed = '';
+            const ext = file.split('.').pop();
             const relativeFile = product.vendor + '/' + file.split(sep + 'src' + sep)[1];
-            const parsed = await parse.file(relativeFile, originalFile);
-            const js = parse.js(parsed.code, false, relativeFile);
+            if (ext === 'html') {
+                sourceParsed = source;
+            } else {
+                const parsed = await parse.file(relativeFile, source);
+                const js = parse.js(parsed.code, false, relativeFile);
+                sourceParsed = js.code;
+            }
             data.files.push({
                 component: relativeFile,
-                source: originalFile,
-                sourceParsed: js.code
+                source: source,
+                sourceParsed: sourceParsed
             });
         }
         const request = await fetch(currentConfig.url + '/api/site/products/' + product.id, {
