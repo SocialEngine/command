@@ -119,7 +119,7 @@ async function get (options = {}) {
     return records;
 }
 
-function newFile ({productId, file, body, pushFile = false}) {
+function newFile ({productId, file, body}, pushFile = false) {
     const folder = productId.split('/')[1];
     const absolutePath = path.join(cwd, '/src', folder, file.replace(productId, ''));
     const dirPath = path.dirname(absolutePath);

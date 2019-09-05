@@ -46,7 +46,7 @@ function serverFiles (socket, event) {
     };
 }
 
-async function handleFile (socket, event, file) {
+async function handleFile (socket, event, file, cacheId) {
     const ext = file.split('.').pop();
     if (!['js', 'html'].includes(ext)) {
         return;
@@ -116,6 +116,7 @@ async function handleFile (socket, event, file) {
     socket.emit('devops', {
         file: {
             event: event,
+            cacheId: cacheId,
             ...data
         },
         manifest: {
@@ -126,8 +127,8 @@ async function handleFile (socket, event, file) {
 }
 
 function srcFiles (socket, event) {
-    return function (file) {
-        handleFile(socket, event, file)
+    return function (file, id) {
+        handleFile(socket, event, file, id)
             .catch(throwError);
     };
 }

@@ -7,9 +7,11 @@ const watcher = require('../app/watcher');
 const product = require('../app/product');
 const config = require('../app/config');
 const {error} = require('../app/output');
+const str = require('../app/str');
 
 const srcDir = path.join(process.cwd(), '/src');
 const serverDir = path.join(process.cwd(), '/srv');
+const fileCache = {};
 
 commander.command('watch').action(async () => {
     if (!config.exits()) {
@@ -40,7 +42,11 @@ commander.command('watch').action(async () => {
         });
 
         for (const event of watchFor) {
-            watch.on(event, watcher.srcFiles(client, event));
+            watch.on(event, file => {
+                const id = str.random();
+                fileCache[id] = file;
+                return watcher.srcFiles(client, event)(file, id);
+            });
         }
 
         const watchServerDir = chokidar.watch(serverDir, {
@@ -61,6 +67,12 @@ commander.command('watch').action(async () => {
                 break;
             case 'moduleCode':
                 product.saveModuleCode(params.data);
+                break;
+            case 'pushFile':
+                if (fileCache[params.data.cacheId] !== undefined) {
+                    return null;
+                }
+                product.newFile(params.data, true);
                 break;
             case 'newFile':
                 product.newFile(params.data);
