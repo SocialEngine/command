@@ -5,9 +5,9 @@ const output = require('./output');
 const dir = require('./dir');
 const str = require('./str');
 const parse = require('./parse');
-const config = require('./config');
 
 const sep = path.sep;
+const configFile = path.join(process.cwd(), '/.cache/store.json');
 
 exports.getUrl = function () {
     return process.env['SE_STORE_URL'] || 'https://www.socialengine.com';
@@ -33,8 +33,11 @@ exports.getXhrToken = async function () {
     return xhrToken;
 };
 
+exports.getConfig = function () {
+    return require(configFile);
+};
+
 exports.saveConfig = function (data) {
-    const configFile = path.join(process.cwd(), '/.cache/store.json');
     const newData = {
         ...data
     };
@@ -45,7 +48,7 @@ exports.saveConfig = function (data) {
     );
 };
 
-exports.push = async function (productId) {
+exports.push = async function (productId, isNew = false) {
     const parts = productId.split('/');
     if (parts[1] === undefined) {
         return output.error('Not a valid product.');
@@ -103,26 +106,34 @@ exports.push = async function (productId) {
 
     data.sourceParsed = parseClient.minified;
     data.sourceParsedAcp = parseAdmin.minified;
-    const response = await this.request(manifest, {push: data}, 'PUT');
+    const prefix = isNew ? '' : '/' + manifest.id;
+    const response = await this.request('/warehouse/products' + prefix, {push: data}, isNew ? 'POST' : 'PUT');
     if (response.guid !== undefined) {
         console.log('Successfully pushed!');
+    } else {
+        console.log(response);
     }
 };
 
-exports.request = async function (product, data, method = 'POST') {
-    const currentConfig = config.get();
+exports.request = async function (endpoint, data, method = 'POST') {
+    const currentConfig = this.getConfig();
     const props = {};
     if (method !== 'GET') {
         props.body = JSON.stringify(data);
     }
-    const request = await fetch(currentConfig.url + '/api/warehouse/products/' + product.guid, {
+    let cookies = '';
+    if (currentConfig.cookieToken) {
+        const parts = currentConfig.cookieToken.split(';');
+        cookies = parts[0].trim();
+    }
+    const request = await fetch(this.getUrl() + '/api' + endpoint, {
         method: method,
         ...props,
         headers: {
             'se-client': 'frontend',
-            'se-api-key': currentConfig.apiKey,
-            'se-viewer-token': currentConfig.apiToken,
-            'content-type': 'application/json'
+            'se-xhr-token': currentConfig.xhrToken,
+            'content-type': 'application/json',
+            cookie: cookies
         }
     });
     return request.json().catch(output.handleCatch);

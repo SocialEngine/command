@@ -17,7 +17,7 @@ commander.command('store:login').action(async function () {
             body: JSON.stringify({
                 email: email,
                 password: password,
-                returnToken: true
+                xhrToken: true
             }),
             headers: {
                 'se-client': 'frontend',
@@ -29,8 +29,16 @@ commander.command('store:login').action(async function () {
         if (!authResponse.user.warehouse.expertGuid) {
             return output.error('Not a developer account.');
         }
+        let cookieToken = '';
+        for (const cookie of authRequest.headers.raw()['set-cookie']) {
+            if (cookie.indexOf(':token') !== -1) {
+                cookieToken = cookie;
+                break;
+            }
+        }
         store.saveConfig({
-            token: authResponse.token
+            xhrToken: authResponse.xhrToken,
+            cookieToken: cookieToken
         });
         console.log('Login successful!');
     }
@@ -38,4 +46,8 @@ commander.command('store:login').action(async function () {
 
 commander.command('store:push <product>').action(async function (product) {
     await store.push(product);
+});
+
+commander.command('store:create <product>').action(async function (product) {
+    await store.push(product, true);
 });
