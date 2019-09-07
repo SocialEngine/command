@@ -7,7 +7,11 @@ const str = require('./str');
 const parse = require('./parse');
 
 const sep = path.sep;
-const configFile = path.join(process.cwd(), '/.cache/store.json');
+const configFile = path.join(
+    process.cwd(),
+    '/.cache',
+    (process.env['SE_USE_PREFIX'] ? process.env['SE_USE_PREFIX'] + '.' : '') + 'store.json'
+);
 
 exports.getUrl = function () {
     return process.env['SE_STORE_URL'] || 'https://www.socialengine.com';
