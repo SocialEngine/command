@@ -69,9 +69,9 @@ exports.push = async function (productId, isNew = false) {
 
     if (fs.existsSync(migrationDir)) {
         for (const file of dir.open(migrationDir)) {
-            data.migrations[file.replace(migrationDir, '')] = fs.readFileSync(
+            data.migrations[file.replace(migrationDir, '')] = JSON.parse(fs.readFileSync(
                 file, 'utf-8'
-            );
+            ));
         }
     }
 
