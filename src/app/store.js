@@ -106,7 +106,7 @@ exports.push = async function (productId, isNew = false) {
 
     data.sourceParsed = parseClient.minified;
     data.sourceParsedAcp = parseAdmin.minified;
-    const prefix = isNew ? '' : '/' + manifest.id;
+    const prefix = isNew ? '' : '/' + manifest.guid;
     return this.request('/warehouse/products' + prefix, {push: data}, isNew ? 'POST' : 'PUT');
 };
 
