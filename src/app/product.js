@@ -7,6 +7,7 @@ const obj = require('./obj');
 const parse = require('./parse');
 const config = require('./config');
 const {error, handleCatch} = require('./output');
+const store = require('./store');
 
 const cwd = process.cwd();
 
@@ -134,6 +135,13 @@ function newFile ({productId, file, body}, pushFile = false) {
         fs.writeFileSync(absolutePathTmp, '---', 'utf-8');
     }
     fs.writeFileSync(absolutePath, body, 'utf-8');
+}
+
+function getLocalManifest (productId) {
+    const productDir = path.join(cwd, '/.se', productId.split('/')[1]);
+    const file = path.join(productDir, '/manifest.json');
+
+    return require(file);
 }
 
 function save (ordered) {
@@ -293,7 +301,29 @@ function saveEventListener ({productId, id, code}) {
     fs.writeFileSync(fileName, code, 'utf-8');
 }
 
+async function install (productId) {
+    const manifest = getLocalManifest(productId);
+    const currentConfig = config.get();
+    const response = await store.request('/warehouse/productPurchases', {
+        productGuid: manifest.guid
+    });
+    const request = await fetch(currentConfig.url + '/api/site/products', {
+        method: 'POST',
+        body: JSON.stringify({
+            warehouseToken: response.token
+        }),
+        headers: {
+            'se-client': 'acp',
+            'se-api-key': currentConfig.apiKey,
+            'se-viewer-token': currentConfig.apiToken,
+            'content-type': 'application/json'
+        }
+    });
+    return request.json().catch(handleCatch);
+}
+
 module.exports = {
+    install: install,
     newFile: newFile,
     save: save,
     get: get,

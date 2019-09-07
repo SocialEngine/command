@@ -3,6 +3,7 @@ const readline = require('readline-sync');
 const store = require('../app/store');
 const fetch = require('node-fetch');
 const output = require('../app/output');
+const config = require('../app/config');
 
 commander.command('store:login').action(async function () {
     const email = readline.questionEMail('Email: ');
@@ -17,7 +18,10 @@ commander.command('store:login').action(async function () {
             body: JSON.stringify({
                 email: email,
                 password: password,
-                xhrToken: true
+                xhrToken: true,
+                params: {
+                    licenseGuid: config.get('licenseGuid')
+                }
             }),
             headers: {
                 'se-client': 'frontend',
@@ -46,8 +50,10 @@ commander.command('store:login').action(async function () {
 
 commander.command('store:push <product>').action(async function (product) {
     await store.push(product);
+    console.log('Successfully pushed!');
 });
 
 commander.command('store:create <product>').action(async function (product) {
     await store.push(product, true);
+    console.log('Successfully created:', product);
 });

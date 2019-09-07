@@ -107,12 +107,7 @@ exports.push = async function (productId, isNew = false) {
     data.sourceParsed = parseClient.minified;
     data.sourceParsedAcp = parseAdmin.minified;
     const prefix = isNew ? '' : '/' + manifest.id;
-    const response = await this.request('/warehouse/products' + prefix, {push: data}, isNew ? 'POST' : 'PUT');
-    if (response.guid !== undefined) {
-        console.log('Successfully pushed!');
-    } else {
-        console.log(response);
-    }
+    return this.request('/warehouse/products' + prefix, {push: data}, isNew ? 'POST' : 'PUT');
 };
 
 exports.request = async function (endpoint, data, method = 'POST') {
@@ -136,5 +131,9 @@ exports.request = async function (endpoint, data, method = 'POST') {
             cookie: cookies
         }
     });
-    return request.json().catch(output.handleCatch);
+    const response = await request.json().catch(output.handleCatch);
+    if (typeof response === 'object' && !Array.isArray(response) && response.error !== undefined) {
+        output.error(response.error);
+    }
+    return response;
 };
