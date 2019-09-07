@@ -269,7 +269,7 @@ function save (ordered) {
         for (const listener of ordered.install.listeners) {
             saveEventListener({
                 productId: ordered.id,
-                id: listener.id,
+                events: listener.events,
                 code: listener.code
             });
         }
@@ -293,9 +293,13 @@ function saveModuleCode ({productId, code}) {
     console.log('[local][save]:', fileName);
 }
 
-function saveEventListener ({productId, id, code}) {
+function saveEventListener ({productId, events, code}) {
     const productDir = getServerDir(productId);
-    const name = id + '.js';
+    const name = events.map(name => {
+        return name
+            .replace(/:/g, '-')
+            .replace(/\./g, '-');
+    }).join('_') + '.js';
     const fileName = path.join(productDir, name);
     console.log('[local][save]:', fileName);
     fs.writeFileSync(fileName, code, 'utf-8');
