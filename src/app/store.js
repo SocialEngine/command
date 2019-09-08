@@ -64,7 +64,14 @@ exports.push = async function (productId, isNew = false) {
     if (!fs.existsSync(manifestFile)) {
         return output.error('Not a valid product to push.');
     }
-    const manifest = require(manifestFile);
+    let manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8'));
+    const localModuleFile = path.join(process.cwd(), '/srv', name, '/module.js');
+    if (fs.existsSync(localModuleFile)) {
+        manifest.moduleCode = fs.readFileSync(localModuleFile, 'utf-8');
+        fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 4), 'utf-8');
+    }
+
+    manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8'))
     const data = {};
 
     data.manifest = manifest;
@@ -73,9 +80,25 @@ exports.push = async function (productId, isNew = false) {
 
     if (fs.existsSync(migrationDir)) {
         for (const file of dir.open(migrationDir)) {
-            data.migrations[file.replace(migrationDir, '')] = JSON.parse(fs.readFileSync(
+            let migration = JSON.parse(fs.readFileSync(
                 file, 'utf-8'
             ));
+            if (file.indexOf('listeners') !== -1) {
+                const fileName = migration.events.map(name => {
+                    return name
+                        .replace(/:/g, '-')
+                        .replace(/\./g, '-');
+                }).join('_') + '.js';
+                const localFile = path.join(process.cwd(), '/srv', name, fileName);
+                if (fs.existsSync(localFile)) {
+                    migration.code = fs.readFileSync(localFile, 'utf-8');
+                    fs.writeFileSync(file, JSON.stringify(migration, null, 4), 'utf-8');
+                }
+            }
+            migration = JSON.parse(fs.readFileSync(
+                file, 'utf-8'
+            ));
+            data.migrations[file.replace(migrationDir, '')] = migration;
         }
     }
 
