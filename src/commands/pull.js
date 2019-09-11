@@ -29,8 +29,10 @@ commander.command('pull').action(async () => {
                         recursive: true
                     });
                 }
-                console.log('[local][save]:', filePath);
-                fs.writeFileSync(filePath, file.source, 'utf-8');
+                if (filePath.indexOf('module:') === -1) {
+                    console.log('[local][save]:', filePath.replace(process.cwd(), ''));
+                    fs.writeFileSync(filePath, file.source, 'utf-8');
+                }
             }
         }
 

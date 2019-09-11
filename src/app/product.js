@@ -290,7 +290,7 @@ function saveModuleCode ({productId, code}) {
     const productDir = getServerDir(productId);
     const fileName = path.join(productDir, '/module.js');
     fs.writeFileSync(fileName, code, 'utf-8');
-    console.log('[local][save]:', fileName);
+    console.log('[local][save]:', fileName.replace(process.cwd(), ''));
 }
 
 function saveEventListener ({productId, events, code}) {
@@ -301,7 +301,7 @@ function saveEventListener ({productId, events, code}) {
             .replace(/\./g, '-');
     }).join('_') + '.js';
     const fileName = path.join(productDir, name);
-    console.log('[local][save]:', fileName);
+    console.log('[local][save]:', fileName.replace(process.cwd(), ''));
     fs.writeFileSync(fileName, code, 'utf-8');
 }
 
