@@ -6,10 +6,12 @@ const output = require('../app/output');
 const config = require('../app/config');
 
 commander.command('store:login').action(async function () {
+    const spinner = output.Spinner();
     const email = readline.questionEMail('Email: ');
     const password = readline.question('Password: ', {
         hideEchoBack: true
     });
+    spinner.start();
     const xhrToken = await store.getXhrToken();
 
     if (xhrToken) {
@@ -30,6 +32,11 @@ commander.command('store:login').action(async function () {
             }
         });
         const authResponse = await authRequest.json();
+        spinner.stop();
+        if (authResponse.error !== undefined) {
+            return output.error(authResponse.error);
+        }
+
         if (!authResponse.user.warehouse.expertGuid) {
             return output.error('Not a developer account.');
         }
@@ -45,15 +52,24 @@ commander.command('store:login').action(async function () {
             cookieToken: cookieToken
         });
         console.log('Login successful!');
+    } else {
+        spinner.stop();
+        output.error('Unable to retrieve XHR token.');
     }
 });
 
 commander.command('store:push <product>').action(async function (product) {
+    const spinner = output.Spinner();
+    spinner.start();
     await store.push(product);
+    spinner.stop();
     console.log('Successfully pushed!');
 });
 
 commander.command('store:create <product>').action(async function (product) {
+    const spinner = output.Spinner();
+    spinner.start();
     await store.push(product, true);
+    spinner.stop();
     console.log('Successfully created:', product);
 });
