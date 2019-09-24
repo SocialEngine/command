@@ -71,7 +71,7 @@ exports.push = async function (productId, isNew = false) {
         fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 4), 'utf-8');
     }
 
-    manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8'))
+    manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8'));
     const data = {};
 
     data.manifest = manifest;
