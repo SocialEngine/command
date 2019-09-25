@@ -4,6 +4,9 @@ const store = require('../app/store');
 const fetch = require('node-fetch');
 const output = require('../app/output');
 const config = require('../app/config');
+const fs = require('fs');
+const path = require('path');
+const url = require('url');
 
 commander.command('store:login').action(async function () {
     const spinner = output.Spinner();
@@ -73,3 +76,25 @@ commander.command('store:create <product>').action(async function (product) {
     spinner.stop();
     console.log('Successfully created:', product);
 });
+
+commander.command('store:set <storeUrl>')
+    .description('Set the store URL')
+    .action(async function (storeUrl) {
+        const spinner = output.Spinner();
+        spinner.start();
+        const parsed = url.parse(storeUrl);
+        const manifest = 'https://' + parsed.hostname + '/manifest.json';
+        const request = await fetch(manifest);
+        const response = await request.json();
+        if (!response.display) {
+            output.error('Not a valid Unite site.');
+        }
+        const siteId = request.headers.raw()['se-id'][0];
+        const envPath = path.join(process.cwd(), '/.cache/env');
+        let lines = '';
+        lines += 'SE_STORE_URL="https://' + parsed.hostname + '"\n';
+        lines += 'SE_STORE_ID="' + siteId + '"';
+        fs.writeFileSync(envPath, lines);
+        spinner.stop();
+        console.log('Store location set.');
+    });
