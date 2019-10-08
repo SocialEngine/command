@@ -18,15 +18,17 @@ commander.command('store:login').action(async function () {
     const xhrToken = await store.getXhrToken();
 
     if (xhrToken) {
+        const params = {};
+        if (config.exits()) {
+            params.licenseGuid = config.get('licenseGuid');
+        }
         const authRequest = await fetch(store.getUrl() + '/api/auth', {
             method: 'POST',
             body: JSON.stringify({
                 email: email,
                 password: password,
                 xhrToken: true,
-                params: {
-                    licenseGuid: config.get('licenseGuid')
-                }
+                params: params
             }),
             headers: {
                 'se-client': 'frontend',
