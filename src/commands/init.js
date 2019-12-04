@@ -50,7 +50,7 @@ commander.command('init')
             }
             const parsed = url.parse(uniteUrl);
 
-            uniteUrl = 'https://' + parsed.hostname;
+            uniteUrl = parsed.protocol + '//' + parsed.hostname + (parsed.port ? ':' + parsed.port : '');
 
             const response = await fetch(uniteUrl + '/manifest.json');
             const manifest = await response.json().catch(() => false);

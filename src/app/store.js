@@ -113,6 +113,10 @@ exports.push = async function (productId, isNew = false) {
     clientAdminContent += 'Breeze.extend(function (' + params.join(',') + ') {\n';
     const dirPath = path.join(process.cwd(), '/src/', parts[1]);
     for (const file of dir.open(dirPath)) {
+        if (file.split('.').pop() !== 'js') {
+            continue;
+        }
+
         const code = fs.readFileSync(file, 'utf-8');
         const component = parts[0] + '/' + file.split(sep + 'src' + sep)[1];
         const js = await parse.file(component, code);
