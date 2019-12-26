@@ -63,13 +63,15 @@ commander.command('store:login').action(async function () {
     }
 });
 
-commander.command('store:push <product>').action(async function (product) {
-    const spinner = output.Spinner();
-    spinner.start();
-    await store.push(product);
-    spinner.stop();
-    console.log('Successfully pushed!');
-});
+commander.command('store:push <product>')
+    .option('-s, --site <id>', 'Site GUID')
+    .action(async function (product, options) {
+        const spinner = output.Spinner();
+        spinner.start();
+        await store.push(product, false, options.site || null);
+        spinner.stop();
+        console.log('Successfully pushed!');
+    });
 
 commander.command('store:create <product>').action(async function (product) {
     const spinner = output.Spinner();

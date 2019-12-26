@@ -52,7 +52,7 @@ exports.saveConfig = function (data) {
     );
 };
 
-exports.push = async function (productId, isNew = false) {
+exports.push = async function (productId, isNew = false, site = null) {
     const parts = productId.split('/');
     if (parts[1] === undefined) {
         return output.error('Not a valid product.');
@@ -137,7 +137,14 @@ exports.push = async function (productId, isNew = false) {
 
     data.sourceParsed = parseClient.minified;
     data.sourceParsedAcp = parseAdmin.minified;
+    data.phrases = {
+        ...parseClient.phrases,
+        ...parseAdmin.phrases
+    };
     const prefix = isNew ? '' : '/' + manifest.guid;
+    if (site) {
+        data.phrasesSiteId = site;
+    }
     return this.request('/warehouse/products' + prefix, {push: data}, isNew ? 'POST' : 'PUT');
 };
 
