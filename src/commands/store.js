@@ -8,60 +8,64 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-commander.command('store:login').action(async function () {
-    const spinner = output.Spinner();
-    const email = readline.questionEMail('Email: ');
-    const password = readline.question('Password: ', {
-        hideEchoBack: true
+commander
+    .command('store:login')
+    .option('-e, --email <email>', 'Email')
+    .option('-p, --password <password>', 'Password')
+    .action(async function (options) {
+        const spinner = output.Spinner();
+        const email = options.email || readline.questionEMail('Email: ');
+        const password = options.password || readline.question('Password: ', {
+            hideEchoBack: true
+        });
+        spinner.start();
+        const xhrToken = await store.getXhrToken();
+
+        if (xhrToken) {
+            const params = {};
+            if (config.exits()) {
+                params.licenseGuid = config.get('licenseGuid');
+            }
+            const authRequest = await fetch(store.getUrl() + '/api/auth', {
+                method: 'POST',
+                body: JSON.stringify({
+                    email: email,
+                    password: password,
+                    xhrToken: true,
+                    params: params
+                }),
+                headers: {
+                    'se-client': 'frontend',
+                    'se-xhr-token': xhrToken,
+                    'content-type': 'application/json'
+                }
+            });
+            const authResponse = await authRequest.json();
+            spinner.stop();
+            if (authResponse.error !== undefined) {
+                return output.error(authResponse.error);
+            }
+
+            if (!authResponse.user.warehouse.expertGuid) {
+                return output.error('Not a developer account.');
+            }
+            let cookieToken = '';
+            for (const cookie of authRequest.headers.raw()['set-cookie']) {
+                if (cookie.indexOf(':token') !== -1) {
+                    cookieToken = cookie;
+                    break;
+                }
+            }
+            store.saveConfig({
+                xhrToken: authResponse.xhrToken,
+                cookieToken: cookieToken
+            });
+            console.log('Login successful!');
+        } else {
+            spinner.stop();
+            output.error('Unable to retrieve XHR token.');
+        }
     });
-    spinner.start();
-    const xhrToken = await store.getXhrToken();
-
-    if (xhrToken) {
-        const params = {};
-        if (config.exits()) {
-            params.licenseGuid = config.get('licenseGuid');
-        }
-        const authRequest = await fetch(store.getUrl() + '/api/auth', {
-            method: 'POST',
-            body: JSON.stringify({
-                email: email,
-                password: password,
-                xhrToken: true,
-                params: params
-            }),
-            headers: {
-                'se-client': 'frontend',
-                'se-xhr-token': xhrToken,
-                'content-type': 'application/json'
-            }
-        });
-        const authResponse = await authRequest.json();
-        spinner.stop();
-        if (authResponse.error !== undefined) {
-            return output.error(authResponse.error);
-        }
-
-        if (!authResponse.user.warehouse.expertGuid) {
-            return output.error('Not a developer account.');
-        }
-        let cookieToken = '';
-        for (const cookie of authRequest.headers.raw()['set-cookie']) {
-            if (cookie.indexOf(':token') !== -1) {
-                cookieToken = cookie;
-                break;
-            }
-        }
-        store.saveConfig({
-            xhrToken: authResponse.xhrToken,
-            cookieToken: cookieToken
-        });
-        console.log('Login successful!');
-    } else {
-        spinner.stop();
-        output.error('Unable to retrieve XHR token.');
-    }
-});
 
 commander.command('store:push <product>')
     .option('-s, --site <id>', 'Site GUID')

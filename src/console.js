@@ -32,6 +32,7 @@ let envFile = path.join(
     '/.cache/',
     (process.env['SE_USE_PREFIX'] ? process.env['SE_USE_PREFIX'] + '.' : '') + 'env'
 );
+
 if (fs.existsSync(envFile)) {
     dotenv.config({
         path: envFile
@@ -40,11 +41,16 @@ if (fs.existsSync(envFile)) {
 
 const commandDir = path.join(__dirname, '/commands');
 const files = fs.readdirSync(commandDir);
+const appBoot = path.join(process.cwd(), '/app/boot.js');
 
 for (const file of files) {
     if (path.extname(file) === '.js') {
         require(path.join(commandDir, file));
     }
+}
+
+if (fs.existsSync(appBoot)) {
+    require(appBoot)(commander);
 }
 
 async function main () {
